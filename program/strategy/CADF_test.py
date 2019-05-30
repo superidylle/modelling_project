@@ -7,6 +7,8 @@ import statsmodels.formula.api as smf
 from pyfinance.ols import OLS, RollingOLS, PandasRollingOLS
 import statsmodels.tsa.stattools as ts
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
 import matplotlib.dates as mdates
 
 data = pd.read_csv(config.input_data_path + '/' + 'EWA EWC' + '.csv', index_col='Date')
@@ -54,27 +56,87 @@ print('cointegration number of observations: %s'%resultsCOIN[3])
 print('cointegration critical values: %s'%resultsCOIN[4])
 
 
-fig = plt.figure()
-ax = fig.add_subplot(311)
-data2 = data[[x_ticker, y_ticker]]
-ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-ax.xaxis.set_major_locator(mdates.MonthLocator())
-ax.set_title("Share price of " + x_ticker + " versus " + y_ticker )
-ax.set_xlabel(x_ticker)
-ax.set_ylabel(y_ticker)
-ax.plot(data2)
+# Plot
 
-ax = fig.add_subplot(312)
-ax.plot(data['numunits'])
-ax.set_title(y_ticker + " - hedge_ratio * " + x_ticker )
-ax.set_xlabel(x_ticker)
-ax.set_ylabel(y_ticker)
+rc = {
+            'lines.linewidth': 1.0,
+            'axes.facecolor': '0.995',
+            'figure.facecolor': '0.97',
+            'font.family': 'serif',
+            'font.serif': 'Ubuntu',
+            'font.monospace': 'Ubuntu Mono',
+            'font.size': 10,
+            'axes.labelsize': 10,
+            'axes.labelweight': 'bold',
+            'axes.titlesize': 10,
+            'xtick.labelsize': 8,
+            'ytick.labelsize': 8,
+            'legend.fontsize': 10,
+            'figure.titlesize': 12
+        }
+
+sns.set_context(rc)
+sns.set_style("whitegrid")
+sns.set_palette("deep", desat=.6)
+vertical_sections = 3
+
+fig = plt.figure(figsize=(10, vertical_sections * 3.5))
+# fig.suptitle(self.title, y=0.94, weight='bold')
+# fig.suptitle(self.title, weight='bold')
+
+gs = gridspec.GridSpec(vertical_sections, 1, wspace=0.25, hspace=0.5)
 
 
-ax = fig.add_subplot(313)
-ax.plot(x, y, 'o')
-ax.plot(xx, yy, 'r')
-ax.set_xlabel(x_ticker)
-ax.set_ylabel(y_ticker)
+def format_perc(x, pos):
+    return '%.2f%%' % x
+
+
+# ax = fig.add_subplot(311)
+
+# data2 = data[[x_ticker, y_ticker]]
+
+data.reset_index(inplace=True, drop=False)
+data['Date'] = pd.to_datetime(data['Date'])
+data.sort_values(by=['Date'], inplace=True)
+data = data.set_index('Date')
+# print(data[[x_ticker]])
+# exit()
+
+
+ax1 = plt.subplot(gs[0, 0])
+ax1 = plt.gca()
+ax1.yaxis.grid(linestyle=':')
+ax1.xaxis.set_tick_params(reset=True)
+ax1.xaxis.set_major_locator(mdates.YearLocator(1))
+ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+ax1.xaxis.grid(linestyle=':')
+data[[x_ticker]].plot(lw=2, color='green', label=x_ticker, alpha=0.60, ax=ax1)
+data[[y_ticker]].plot(lw=2, color='rosybrown', alpha=0.6, x_compat=False, ax=ax1)
+ax1.set_title("Share price of " + x_ticker + " vs " + y_ticker )
+ax1.set_xlabel("Year")
+
+ax2 = plt.subplot(gs[1, 0])
+ax2 = plt.gca()
+ax2.yaxis.grid(linestyle=':')
+ax2.xaxis.set_tick_params(reset=True)
+ax2.xaxis.grid(linestyle=':')
+ax2.plot(x, y, 'o', markersize=2, color='silver', label=x_ticker, alpha=0.60)
+ax2.plot(xx, yy, lw=2, color='dodgerblue', label=x_ticker, alpha=0.60)
+ax2.set_title("Scatter Plot of " + x_ticker + " vs " + y_ticker )
+ax2.set_xlabel(x_ticker + " share price")
+ax2.set_ylabel(y_ticker + " share price")
+
+
+ax3 = plt.subplot(gs[2, 0])
+ax3 = plt.gca()
+ax3.yaxis.grid(linestyle=':')
+ax3.xaxis.set_tick_params(reset=True)
+ax3.xaxis.set_major_locator(mdates.YearLocator(1))
+ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+ax3.xaxis.grid(linestyle=':')
+data['numunits'].plot(lw=2, color='coral', label=x_ticker, alpha=0.60, ax=ax3)
+ax3.set_xlabel("Year")
+ax3.set_ylabel(y_ticker + "- hedge ratio * " + x_ticker)
 
 plt.show()
+fig.savefig(config.output_data_path + "/CADF_test" + ".png" , dpi=150, bbox_inches='tight')
