@@ -428,7 +428,7 @@ class TearsheetStatistic():
         plt.show()
 
         if filename is not None:
-            fig.savefig(filename, dpi=150, bbox_inches='tight')
+            fig.savefig(filename, dpi=200, bbox_inches='tight')
 
     def get_filename(self, filename=""):
         if filename == "":
